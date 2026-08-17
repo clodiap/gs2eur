@@ -1,0 +1,7 @@
+.gs2eur-badge {
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+}

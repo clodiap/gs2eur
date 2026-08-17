@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Guaraní → Euro",
+  "version": "1.0.0",
+  "description": "Convertit automatiquement les prix affichés en Guaraní paraguayen (₲, Gs., PYG) en Euro (€) sur n'importe quelle page web.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "<all_urls>",
+    "https://open.er-api.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Guaraní → Euro"
+  }
+}

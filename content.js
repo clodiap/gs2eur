@@ -85,7 +85,61 @@
     textNode.parentNode.replaceChild(frag, textNode);
   }
 
+  // Certains sites (ex : AliExpress) éclatent un prix sur plusieurs <span>
+  // ("Gs." / "46" / "." / "814") mais placent le montant complet dans un
+  // attribut aria-label du conteneur, pour l'accessibilité. On s'appuie
+  // dessus quand le texte brut ne suffit pas.
+  function processAriaLabelElement(el) {
+    if (shouldSkip(el)) return;
+    if (el.closest('[data-gs2eur-aria-handled]')) return;
+
+    const label = el.getAttribute('aria-label');
+    if (!label || !/₲|Gs\.?|PYG/i.test(label)) return;
+
+    CURRENCY_REGEX.lastIndex = 0;
+    const match = CURRENCY_REGEX.exec(label);
+    if (!match) return;
+    const converted = convertMatch(match);
+    if (!converted) return;
+
+    // Reprend le style (couleur, taille) d'un des spans internes pour
+    // que le badge s'intègre visuellement au reste de la page.
+    const sampleSpan = el.querySelector('span[style]');
+    const sampleStyle = sampleSpan ? sampleSpan.getAttribute('style') : '';
+
+    const wrapper = document.createElement('span');
+    wrapper.className = 'gs2eur-hidden-original';
+    while (el.firstChild) {
+      wrapper.appendChild(el.firstChild);
+    }
+
+    const badge = document.createElement('span');
+    badge.className = CLASS_NAME;
+    if (sampleStyle) badge.setAttribute('style', sampleStyle);
+    badge.textContent = converted.eurText;
+    badge.title = `Prix original : ${converted.originalText} (taux utilisé : 1 € = ${RATE.toLocaleString('fr-FR')} ₲)`;
+    badge.dataset.original = converted.originalText;
+
+    el.appendChild(wrapper);
+    el.appendChild(badge);
+    el.dataset.gs2eurAriaHandled = 'true';
+    el.setAttribute('data-gs2eur-original-label', label);
+    el.setAttribute('aria-label', converted.eurText);
+  }
+
+  function walkAriaLabels(root) {
+    if (!root || root.nodeType !== Node.ELEMENT_NODE) return;
+    const candidates = [];
+    if (root.hasAttribute && root.hasAttribute('aria-label')) candidates.push(root);
+    if (root.querySelectorAll) {
+      root.querySelectorAll('[aria-label]').forEach((el) => candidates.push(el));
+    }
+    candidates.forEach(processAriaLabelElement);
+  }
+
   function walk(root) {
+    walkAriaLabels(root);
+
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         return shouldSkip(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
@@ -98,6 +152,22 @@
   }
 
   function restoreAll() {
+    // Restaure les conversions basées sur aria-label en premier, car leurs
+    // badges vivent à l'intérieur d'un élément qu'il faut aussi "déplier".
+    document.querySelectorAll('[data-gs2eur-aria-handled]').forEach((el) => {
+      const wrapper = el.querySelector(':scope > .gs2eur-hidden-original');
+      const badge = el.querySelector(':scope > .' + CLASS_NAME);
+      if (wrapper) {
+        while (wrapper.firstChild) el.insertBefore(wrapper.firstChild, wrapper);
+        wrapper.remove();
+      }
+      if (badge) badge.remove();
+      const originalLabel = el.getAttribute('data-gs2eur-original-label');
+      if (originalLabel) el.setAttribute('aria-label', originalLabel);
+      el.removeAttribute('data-gs2eur-original-label');
+      delete el.dataset.gs2eurAriaHandled;
+    });
+
     document.querySelectorAll('.' + CLASS_NAME).forEach((badge) => {
       const original = badge.dataset.original || badge.textContent;
       badge.replaceWith(document.createTextNode(original));

@@ -5,3 +5,9 @@
   font: inherit;
   white-space: nowrap;
 }
+
+/* Contenu original masqué (mais conservé dans le DOM) quand un prix
+   éclaté sur plusieurs balises a été converti via aria-label. */
+.gs2eur-hidden-original {
+  display: none;
+}

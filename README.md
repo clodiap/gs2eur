@@ -8,6 +8,7 @@ Extension pour navigateurs basés sur Chromium (**Brave**, Chrome, Edge...) qui 
 - Remplacement du prix par sa valeur en euro (ex : `18,75 €`), avec le montant original visible au survol.
 - Fonctionne aussi sur les sites dynamiques (React, Vue, etc.) grâce à un `MutationObserver` qui surveille le contenu ajouté après le chargement initial.
 - Taux de change réglable manuellement ou récupérable en un clic via une API gratuite.
+- **Convertisseur manuel** dans le popup : saisissez un montant en ₲ ou en €, l'autre champ se met à jour en direct (dans les deux sens).
 - Activation / désactivation instantanée depuis le popup.
 
 ## 📦 Installation
